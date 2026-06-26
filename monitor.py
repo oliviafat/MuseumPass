@@ -25,6 +25,7 @@ def check_availability():
         # Give JS a moment to finish rendering the calendar
         page.wait_for_timeout(2000)
 
+        page.screenshot(path="screenshot.png", full_page=True)
         html = page.content()
         browser.close()
         return html
