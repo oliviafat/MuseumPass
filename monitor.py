@@ -1,8 +1,6 @@
-import glob
 import os
 import re
 import smtplib
-from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -90,52 +88,35 @@ def find_available_dates(html):
 
 def send_email(available_info: list[str]):
     sender = os.environ["GMAIL_ADDRESS"]
+        # Gmail App Password (16-char, generated at myaccount.google.com > Security > App Passwords)
     password = os.environ["GMAIL_APP_PASSWORD"]
     recipient = os.environ["RECIPIENT_EMAIL"]
 
-    has_availability = bool(available_info)
-
-    msg = MIMEMultipart("mixed")
+    msg = MIMEMultipart("alternative")
     msg["From"] = sender
     msg["To"] = recipient
-    msg["Subject"] = (
-        "[KCLS] Museum Pass Available — Act Fast!"
-        if has_availability
-        else "[KCLS] Monitor Check — No Availability"
-    )
+    msg["Subject"] = f"[KCLS] Museum Pass Available — Act Fast!"
 
-    if has_availability:
-        snippets = "\n".join(f"  • {s}" for s in available_info[:10])
-        body = f"""\
+    snippets = "\n".join(f"  • {s}" for s in available_info[:10])
+    body = f"""\
 Museum passes are now available for {PASS_NAME}!
 
 {snippets}
 
 Book now before they're gone:
 {PASS_URL}
+
+---
+This is an automated notification. You will receive another email
+the next time availability is detected.
 """
-    else:
-        body = f"""\
-Routine check complete — no passes available right now for {PASS_NAME}.
-
-Screenshots of both months are attached.
-
-{PASS_URL}
-"""
-
     msg.attach(MIMEText(body, "plain"))
-
-    for path in sorted(glob.glob("screenshot_month*.png")):
-        with open(path, "rb") as f:
-            img = MIMEImage(f.read())
-            img.add_header("Content-Disposition", "attachment", filename=os.path.basename(path))
-            msg.attach(img)
 
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
         server.login(sender, password)
         server.sendmail(sender, recipient, msg.as_string())
 
-    print("Email sent.")
+    print("Notification email sent.")
 
 
 def main():
@@ -145,11 +126,10 @@ def main():
     available = find_available_dates(html)
 
     if available:
-        print(f"Availability detected ({len(available)} item(s)).")
+        print(f"Availability detected ({len(available)} item(s)). Sending email...")
+        send_email(available)
     else:
         print("No availability found.")
-
-    send_email(available)
 
 
 if __name__ == "__main__":
