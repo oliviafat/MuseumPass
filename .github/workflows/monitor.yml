@@ -1,0 +1,32 @@
+name: Monitor KCLS Museum Pass Availability
+
+on:
+  schedule:
+    # Runs every 30 minutes
+    - cron: "*/30 * * * *"
+  workflow_dispatch: # allows manual trigger from GitHub UI
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Playwright browser
+        run: playwright install chromium --with-deps
+
+      - name: Run availability monitor
+        env:
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
+        run: python monitor.py

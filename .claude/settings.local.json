@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:rooms.kcls.org)",
+      "WebFetch(domain:kcls.libcal.com)",
+      "WebSearch",
+      "Bash(mkdir -p \"c:/Projects/MuseumPass/.github/workflows\")"
+    ],
+    "additionalDirectories": [
+      "c:\\Projects\\MuseumPass\\.github"
+    ]
+  }
+}
