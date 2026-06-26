@@ -2,8 +2,8 @@ name: Monitor KCLS Museum Pass Availability
 
 on:
   schedule:
-    # Runs every 30 minutes
-    - cron: "*/30 * * * *"
+    # Runs every 5 minutes
+    - cron: "*/5 * * * *"
   workflow_dispatch: # allows manual trigger from GitHub UI
 
 jobs:
@@ -18,10 +18,24 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+
+      - name: Cache Playwright browser
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('requirements.txt') }}
+
       - name: Install dependencies
         run: pip install -r requirements.txt
 
       - name: Install Playwright browser
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: playwright install chromium --with-deps
 
       - name: Run availability monitor
