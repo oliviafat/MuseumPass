@@ -10,25 +10,45 @@ PASS_URL = "https://rooms.kcls.org/passes/8e456682901d"
 PASS_NAME = "Seattle Aquarium Museum Pass (KCLS)"
 
 
+def wait_for_calendar(page):
+    try:
+        page.wait_for_selector("text=Working...", state="hidden", timeout=15000)
+    except Exception:
+        pass
+    page.wait_for_timeout(1500)
+
+
 def check_availability():
+    html_chunks = []
+
     with sync_playwright() as p:
         browser = p.chromium.launch()
         page = browser.new_page()
         page.goto(PASS_URL, wait_until="networkidle", timeout=30000)
 
-        # Wait for the loading spinner to disappear
+        wait_for_calendar(page)
+
+        # Capture current month
+        html_chunks.append(page.content())
+        page.screenshot(path="screenshot_month1.png", full_page=True)
+
+        # Navigate to next month
+        next_btn = (
+            page.locator("button:has-text('Next')").first
+            or page.locator("[aria-label='Next']").first
+            or page.locator(".s-lc-cal-next").first
+        )
         try:
-            page.wait_for_selector("text=Working...", state="hidden", timeout=15000)
+            next_btn.click(timeout=5000)
+            wait_for_calendar(page)
+            html_chunks.append(page.content())
+            page.screenshot(path="screenshot_month2.png", full_page=True)
         except Exception:
-            pass  # may not appear if content loaded fast
+            print("Warning: could not navigate to next month.")
 
-        # Give JS a moment to finish rendering the calendar
-        page.wait_for_timeout(2000)
-
-        page.screenshot(path="screenshot.png", full_page=True)
-        html = page.content()
         browser.close()
-        return html
+
+    return "\n".join(html_chunks)
 
 
 def find_available_dates(html):
